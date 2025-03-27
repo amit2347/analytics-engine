@@ -9,15 +9,13 @@ module.exports = new EntitySchema({
       type: "uuid",
       generated: "uuid",
     },
-    eventName: {
-      type: "varchar",
-    },
-    url: {
+    event: {
       type: "varchar",
     },
     referrer: {
       type: "varchar",
       nullable: true,
+      default: null,
     },
     device: {
       type: "varchar",
@@ -28,12 +26,20 @@ module.exports = new EntitySchema({
     metadata: {
       type: "json",
     },
-    appId: {
-      type: "uuid",
-    },
     timestamp: {
       type: "timestamp",
       createDate: true,
+      index: true,
     },
   },
+  relations: {
+    appId: {
+        target: "ApplicationData", // Reference to the "User" entity
+        type: "many-to-one", // Many Applications can belong to one User
+        joinColumn: {
+            name: "appid" // Matches the column name
+        },
+        onDelete: "CASCADE" // Cascades delete when the referenced user is deleted
+    }
+}
 });

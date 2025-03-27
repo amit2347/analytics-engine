@@ -7,6 +7,7 @@ const router = express.Router();
 const crypto = require("crypto");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const authRoutes = require("./routes/auth.route");
+const analyticsRoutes = require("./routes/analytics.route");
 const User = require("./entities/User");
 
 const app = express();
@@ -80,6 +81,7 @@ const startApp = async () => {
     await connectToRedis();
     // Redirect user to Google for authentication
     app.use("/auth", authRoutes);
+    app.use("/analytics", analyticsRoutes);
     app.get("/", (req, res) => {
       res.send(`<a href="/auth/google">Login with google</a>`);
     });
