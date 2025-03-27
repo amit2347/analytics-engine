@@ -78,7 +78,7 @@ passport.deserializeUser(async (id, done) => {
 const startApp = async () => {
   try {
     await connectToDB();
-    await connectToRedis();
+    await require('./config/redis');
     // Redirect user to Google for authentication
     app.use("/auth", authRoutes);
     app.use("/analytics", analyticsRoutes);
@@ -88,6 +88,8 @@ const startApp = async () => {
     app.listen(1055, () => {
       console.log("listening");
     });
+    require('./jobs/logQueue')
+    require('./jobs/logWorker')
   } catch (error) {
     console.error("Error initializing connections:", error);
   }

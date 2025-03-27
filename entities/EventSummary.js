@@ -62,6 +62,6 @@ module.exports = new EntitySchema({
       type: "many-to-one",
       joinColumn: { name: "appId" },
       onDelete: "CASCADE",
-    },
+    },  
   },
 });
