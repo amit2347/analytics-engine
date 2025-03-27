@@ -3,6 +3,7 @@ const Event = require('../entities/Event')
 const EventSummary = require('../entities/EventSummary')
 const User = require('../entities/User')
 const UserAnalytics = require('../entities/UserAnalytics')
+const ApplicationData = require('../entities/applicationData')
 require('dotenv').config();
 
 const AppDataSource = new DataSource({
@@ -13,7 +14,7 @@ const AppDataSource = new DataSource({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     synchronize: true,
-    entities: [Event , EventSummary , User , UserAnalytics], // Path to your entities
+    entities: [Event , EventSummary , User , UserAnalytics , ApplicationData], // Path to your entities
 });
 
 async function connectToDB() {

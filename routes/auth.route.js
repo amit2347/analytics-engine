@@ -1,15 +1,12 @@
 const express = require("express");
 const passport = require("passport");
-const { AppDataSource } = require("../config/db");
-const { getProfileDetails } = require("../controllors/auth.controller.js");
-const User = require("../entities/User");
+const {
+  getProfileDetails,
+  registerApplication,
+  regenerateApiKey,
+  revokeApiKey
+} = require("../controllors/auth.controller.js");
 const router = express.Router();
-
-// Logout
-router.get("/logout", (req, res) => {
-  req.logout();
-  res.redirect("/");
-});
 
 router.get(
   "/google",
@@ -28,6 +25,10 @@ router.get(
   }
 );
 router.get("/profile", getProfileDetails);
+//endpoint for register app for analytics
+router.post("/register", registerApplication);
+router.get('/api-key' , regenerateApiKey )
+router.post('/revoke' , revokeApiKey )
 // Logout
 router.get("/logout", (req, res) => {
   req.logout();

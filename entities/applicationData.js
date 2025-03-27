@@ -20,12 +20,7 @@ module.exports = new EntitySchema({
             unique: true,
             nullable: false
         },
-        ownerEmail: {
-            type: "varchar",
-            length: 255,
-            nullable: false
-        },
-        apiKey: {
+        hashedApiKey: {
             type: "varchar",
             length: 64,
             unique: true,
@@ -34,6 +29,20 @@ module.exports = new EntitySchema({
         createdAt: {
             type: "timestamp",
             createDate: true
+        },
+        revokeStatus:{
+            type : "boolean",
+            default : false
+        }
+    },
+    relations: {
+        ownerUser: {
+            target: "User", // Reference to the "User" entity
+            type: "many-to-one", // Many Applications can belong to one User
+            joinColumn: {
+                name: "ownerUser" // Matches the column name
+            },
+            onDelete: "CASCADE" // Cascades delete when the referenced user is deleted
         }
     }
 });
