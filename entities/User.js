@@ -20,6 +20,11 @@ module.exports = new EntitySchema({
     name: {
       type: "varchar",
     },
+    appId:{
+        type: "varchar",
+        unique: true,
+        nullable : true
+    },
     createdAt: {
       type: "timestamp",
       createDate: true,
