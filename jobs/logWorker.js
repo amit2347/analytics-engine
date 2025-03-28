@@ -1,7 +1,9 @@
 const { Worker } = require("bullmq");
 const { createClient } = require("redis");
 const { Promise } = require("bluebird");
-const {processEventLogs} = require('../helper/data.pipeline.helper')
+const {processEventLogs} = require('../helper/data.pipeline.helper');
+const { AppDataSource } = require("../config/db");
+const EventSummary = require("../entities/EventSummary");
 // ✅ Create Redis client for direct Redis operations
 const redisClient = createClient({
   socket: {
@@ -45,7 +47,33 @@ const worker = new Worker(
         console.log("⚠️ No logs to process.");
       }
     const resFromPipeline = await processEventLogs(logs)
-    console.log("res",resFromPipeline)
+    await Promise.map(resFromPipeline , async(item)=>{
+      const existence = await AppDataSource.getRepository(EventSummary).findOne({
+        where : {
+          appId : item.app_id,
+          eventName : item.event_name,
+          date : item.event_date
+        }
+      })
+      if(existence){
+       await AppDataSource.getRepository(EventSummary).update(
+        {id : existence.id} , 
+        {
+         totalCount : existence.totalCount + item.total_count,
+         uniqueUsers : existence.uniqueUsers + item.unique_users_count
+        })
+      }
+      else{
+        const objectToSave = AppDataSource.getRepository(EventSummary).create({
+          appId : item.app_id,
+          eventName : item.event_name , 
+          date : item.event_date,
+          totalCount : item.total_count,
+          uniqueUsers : item.unique_users_count ,
+        })
+        await AppDataSource.getRepository(EventSummary).save(objectToSave)
+      }
+    })
    
   },
   {

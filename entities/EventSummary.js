@@ -56,12 +56,4 @@ module.exports = new EntitySchema({
       columns: ["appId", "eventName", "date"],
     },
   ],
-  relations: {
-    app: {
-      target: "Event", // Assuming you have an 'App' entity
-      type: "many-to-one",
-      joinColumn: { name: "appId" },
-      onDelete: "CASCADE",
-    },  
-  },
 });
