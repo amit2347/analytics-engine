@@ -72,3 +72,62 @@ module.exports.processEventLogs = async (logs) => {
 
   return eventSummaryRows;
 };
+module.exports.processEventLogsForUser = async (logs) => {
+  const userStatsMap = new Map();
+
+  for (let i = 0; i < logs.length; i += 1) {
+    let log = JSON.parse(logs[i]);
+    
+    // Ensure we have required fields
+    if (!log.metadata?.userId) {
+      console.warn(`Skipping log due to missing userId:`, log);
+      continue;
+    }
+
+    const userId = log.metadata.userId;
+
+    // Initialize user entry if it doesn't exist
+    if (!userStatsMap.has(userId)) {
+      userStatsMap.set(userId, {
+        userId: userId,
+        totalEvents: 0,
+        deviceDetails: {},
+        ipAddress: log.ipAddress || 'Unknown',
+        lastEventTimestamp: new Date(log.timeStamp)
+      });
+    }
+
+    const userEntry = userStatsMap.get(userId);
+
+    // Update total events
+    userEntry.totalEvents += 1;
+
+    // Update device details
+    const deviceType = log.device;
+    if (deviceType) {
+      userEntry.deviceDetails[deviceType] = 
+        (userEntry.deviceDetails[deviceType] || 0) + 1;
+    }
+
+    // Update last event timestamp
+    const currentEventTime = new Date(log.timeStamp);
+    if (currentEventTime > userEntry.lastEventTimestamp) {
+      userEntry.lastEventTimestamp = currentEventTime;
+    }
+  }
+
+  // Convert Map to array of user stats
+  const userStatsRows = [];
+
+  for (const [userId, stats] of userStatsMap.entries()) {
+    userStatsRows.push({
+      userId: stats.userId,
+      totalEvents: stats.totalEvents,
+      deviceDetails: stats.deviceDetails,
+      ipAddress: stats.ipAddress,
+      lastEventTimestamp: stats.lastEventTimestamp
+    });
+  }
+
+  return userStatsRows;
+};

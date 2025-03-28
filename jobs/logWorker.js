@@ -1,9 +1,13 @@
 const { Worker } = require("bullmq");
 const { createClient } = require("redis");
 const { Promise } = require("bluebird");
-const {processEventLogs} = require('../helper/data.pipeline.helper');
+const {
+  processEventLogs,
+  processEventLogsForUser,
+} = require("../helper/data.pipeline.helper");
 const { AppDataSource } = require("../config/db");
 const EventSummary = require("../entities/EventSummary");
+const UserAnalytics = require("../entities/UserAnalytics");
 // ✅ Create Redis client for direct Redis operations
 const redisClient = createClient({
   socket: {
@@ -22,7 +26,7 @@ const redisClient = createClient({
 const worker = new Worker(
   "process-logs",
   async (job) => {
-    console.log("hit")
+    console.log("hit");
     const { batchSize } = job.data;
 
     const logs = await redisClient.lRange("logs", 0, batchSize - 1);
@@ -41,40 +45,80 @@ const worker = new Worker(
     //     timeStamp : 1743093696314
     //   }
     if (logs.length > 0) {
-        await redisClient.lTrim("logs", batchSize, -1);
-        console.log(` Processed ${logs.length} logs.`);
-      } else {
-        console.log("⚠️ No logs to process.");
-      }
-    const resFromPipeline = await processEventLogs(logs)
-    await Promise.map(resFromPipeline , async(item)=>{
-      const existence = await AppDataSource.getRepository(EventSummary).findOne({
-        where : {
-          appId : item.app_id,
-          eventName : item.event_name,
-          date : item.event_date
+      await redisClient.lTrim("logs", batchSize, -1);
+      console.log(` Processed ${logs.length} logs.`);
+    } else {
+      console.log("⚠️ No logs to process.");
+    }
+    const resFromPipeline = await processEventLogs(logs);
+    const resFromUserPipeline = await processEventLogsForUser(logs);
+    console.log(resFromUserPipeline, "resFromUserPipeline");
+    await Promise.map(resFromUserPipeline, async (item) => {
+      try {
+        const existence = await AppDataSource.getRepository(
+          UserAnalytics
+        ).findOne({
+          where: {
+            userId: item.userId,
+          },
+        });
+        if (existence) {
+          await AppDataSource.getRepository(UserAnalytics).update(
+            { id: existence.id },
+            {
+              totalEvents: existence.totalEvents + item.totalEvents,
+              lastEventTimestamp: item.lastEventTimestamp,
+            }
+          );
+        } else {
+          const objectToSave = AppDataSource.getRepository(
+            UserAnalytics
+          ).create({
+            userId: item.userId,
+            totalEvents: item.totalEvents,
+            deviceDetails: item.deviceDetails,
+            ipAddress: item.ipAddress,
+            lastEventTimestamp: item.lastEventTimestamp,
+          });
+          const res = await AppDataSource.getRepository(UserAnalytics).save(
+            objectToSave
+          );
+          console.log("res ->", res);
         }
-      })
-      if(existence){
-       await AppDataSource.getRepository(EventSummary).update(
-        {id : existence.id} , 
+      } catch (e) {
+        console.error(e);
+        return;
+      }
+    });
+    await Promise.map(resFromPipeline, async (item) => {
+      const existence = await AppDataSource.getRepository(EventSummary).findOne(
         {
-         totalCount : existence.totalCount + item.total_count,
-         uniqueUsers : existence.uniqueUsers + item.unique_users_count
-        })
-      }
-      else{
+          where: {
+            appId: item.app_id,
+            eventName: item.event_name,
+            date: item.event_date,
+          },
+        }
+      );
+      if (existence) {
+        await AppDataSource.getRepository(EventSummary).update(
+          { id: existence.id },
+          {
+            totalCount: existence.totalCount + item.total_count,
+            uniqueUsers: existence.uniqueUsers + item.unique_users_count,
+          }
+        );
+      } else {
         const objectToSave = AppDataSource.getRepository(EventSummary).create({
-          appId : item.app_id,
-          eventName : item.event_name , 
-          date : item.event_date,
-          totalCount : item.total_count,
-          uniqueUsers : item.unique_users_count ,
-        })
-        await AppDataSource.getRepository(EventSummary).save(objectToSave)
+          appId: item.app_id,
+          eventName: item.event_name,
+          date: item.event_date,
+          totalCount: item.total_count,
+          uniqueUsers: item.unique_users_count,
+        });
+        await AppDataSource.getRepository(EventSummary).save(objectToSave);
       }
-    })
-   
+    });
   },
   {
     connection: {
