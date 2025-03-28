@@ -2,8 +2,10 @@ const { AppDataSource } = require("../config/db");
 const redisClient = require("../config/redis");
 const ApplicationData = require("../entities/applicationData");
 const Event = require("../entities/Event");
+const EventSummary = require("../entities/EventSummary");
 const User = require("../entities/User");
-
+const { Between } = require("typeorm");
+const UserAnalytics = require("../entities/UserAnalytics");
 const eventRepository = AppDataSource.getRepository(Event);
 const applicationDataRepository = AppDataSource.getRepository(ApplicationData);
 const userRepository = AppDataSource.getRepository(User);
@@ -17,8 +19,8 @@ module.exports.collectLogs = async (req, res) => {
       ipAddress: payload.ipAddress,
       metadata: payload.metadata,
       appId: payload.appId,
-      timeStamp : Date.now()
-    }
+      timeStamp: Date.now(),
+    };
     await redisClient.lpush("logs", JSON.stringify(objToPushToRedis));
     // const appData = await applicationDataRepository.findOne({
     //   where: {
@@ -47,103 +49,94 @@ module.exports.collectLogs = async (req, res) => {
 
 module.exports.getEventSummary = async (req, res) => {
   try {
-    const { event, startDate, endDate, app_id } = req.query;
+    const { event: eventName, startDate, endDate, app_id: appId } = req.query;
 
-    if (!event) {
+    // Validate required parameters
+    if (!eventName) {
       return res.status(400).json({ message: "Event type is required" });
     }
 
-    const queryBuilder = eventRepository
-      .createQueryBuilder("event")
-      .select([
-        "subquery.event AS event",
-        "SUM(subquery.count) AS count",
-        "SUM(subquery.uniqueUsers) AS uniqueUsers",
-        "JSON_OBJECTAGG(subquery.device, subquery.count) AS deviceData",
-      ])
-      .innerJoin(
-        (qb) =>
-          qb
-            .select([
-              "event.device AS device",
-              "COUNT(*) AS count",
-              "COUNT(DISTINCT event.ipAddress) AS uniqueUsers",
-              "event.event AS event",
-            ])
-            .from(Event, "event")
-            .where("event.event = :event", { event })
-            .groupBy("event.device, event.event, event.appId"),
-        "subquery",
-        "subquery.event = event.event"
-      )
-      .groupBy("subquery.event");
+    // Create query builder
+    const queryBuilder = AppDataSource.getRepository(EventSummary)
+      .createQueryBuilder("eventSummary")
+      .where("eventSummary.eventName = :eventName", { eventName });
 
-    // Apply optional filters
-    if (startDate) {
-      queryBuilder.andWhere("event.timestamp >= :startDate", { startDate });
-    }
-    if (endDate) {
-      queryBuilder.andWhere("event.timestamp <= :endDate", { endDate });
-    }
-    if (app_id) {
-      queryBuilder.andWhere("event.appId = :app_id", { app_id });
+    // Add app_id condition if provided
+    if (appId) {
+      queryBuilder.andWhere("eventSummary.appId = :appId", {
+        appId: parseInt(appId, 10),
+      });
     }
 
-    // Execute Query
-    const result = await queryBuilder.execute();
-    return res.status(200).json(result);
+    // Add date range if provided
+    if (startDate && endDate) {
+      queryBuilder.andWhere(
+        "eventSummary.date BETWEEN :startDate AND :endDate",
+        {
+          startDate: new Date(startDate),
+          endDate: new Date(endDate),
+        }
+      );
+    }
+
+    // Perform SQL-level aggregation
+    const result = await queryBuilder
+      .select("SUM(eventSummary.totalCount)", "totalEvents")
+      .addSelect("SUM(eventSummary.uniqueUsers)", "totalUniqueUsers")
+      .getRawOne();
+
+    const summary = {
+      event: eventName,
+      totalEvents: Number(result.totalEvents) || 0,
+      totalUniqueUsers: Number(result.totalUniqueUsers) || 0,
+    };
+
+    return res.status(200).json(summary);
   } catch (error) {
     console.error("Error fetching event summary:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };
 
 module.exports.getUserStats = async (req, res) => {
   try {
     const userId = req.query.userId;
-    const userExistence = await userRepository.findOne({
+
+    // Fetch user stats directly from UserAnalytics table
+    const userStats = await AppDataSource.getRepository(UserAnalytics).findOne({
       where: {
-        id: userId,
+        userId,
       },
     });
-    console.log("userExistence" , userExistence)
-    if (!userExistence) {
+
+    // If no stats found for the user
+    if (!userStats) {
       return res.status(404).send({
-        message: "user not found",
+        message: "User stats not found",
       });
     }
-    const queryBuilder = eventRepository
-      .createQueryBuilder("event")
-      .select([
-        "event.ipAddress AS ipAddress",
-        "event.metadata->>'$.browser' AS browser", // Extract browser from JSON metadata
-        "event.metadata->>'$.os' AS os", // Extract OS from JSON metadata
-        "COUNT(*) AS totalEvents",
-      ])
-      .where("event.metadata->>'$.userId' = :userId", {userId: userExistence.id })
-      .groupBy("event.ipAddress, browser, os")
-      .orderBy("MAX(event.timestamp)", "DESC") // Get the most recent event details
-      .limit(1); // Fetch the latest event for user details
 
-    // Execute Query
-    const result = await queryBuilder.getRawOne();
-      console.log("restl" , result)
     // Format the response
     const response = {
-      userId : userExistence.id,
-      totalEvents: result?.totalEvents || 0,
-      deviceDetails: {
-        browser: result?.browser || "Unknown",
-        os: result?.os || "Unknown",
+      userId: userStats.userId,
+      totalEvents: userStats.totalEvents || 0,
+      lastEventTimestamp: userStats.lastEventTimestamp,
+      deviceDetails: userStats.deviceDetails || {
+        browser: "Unknown",
+        os: "Unknown",
       },
-      ipAddress: result?.ipAddress || "Unknown",
+      ipAddress: userStats.ipAddress || "Unknown",
     };
 
     return res.json(response);
   } catch (e) {
     console.error(e);
-    return res.status(400).send({
-      message: "something went wrong",
+    return res.status(500).send({
+      message: "Internal server error",
+      error: e.message,
     });
   }
 };

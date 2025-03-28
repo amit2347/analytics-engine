@@ -52,7 +52,6 @@ const worker = new Worker(
     }
     const resFromPipeline = await processEventLogs(logs);
     const resFromUserPipeline = await processEventLogsForUser(logs);
-    console.log(resFromUserPipeline, "resFromUserPipeline");
     await Promise.map(resFromUserPipeline, async (item) => {
       try {
         const existence = await AppDataSource.getRepository(

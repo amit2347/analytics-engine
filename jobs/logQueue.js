@@ -9,7 +9,7 @@ async function checkAndEnqueue() {
   const logCount = await redisClient.llen("logs");
 
   // If logs are above threshold (5000), process immediately
-  if (logCount > 5000) {
+  if (logCount > 5) {
     console.log(`Queueing job for ${logCount} logs`);
     await logQueue.add("process-logs", { batchSize: logCount });
     lastProcessedTime = Date.now(); // Update last processed time

@@ -1,6 +1,11 @@
+const { AppDataSource } = require("../config/db");
+const applicationData = require("../entities/applicationData");
+const Event = require("../entities/Event");
+const eventRepository =  AppDataSource.getRepository(Event)
 module.exports.processEventLogs = async (logs) => {
-  const masterMap = new Map();
-
+  try{
+    const masterMap = new Map();
+  let dataToSaveInDB = [];
   // First, process logs and aggregate data
   for (let i = 0; i < logs.length; i += 1) {
     let log = JSON.parse(logs[i]);
@@ -46,8 +51,26 @@ module.exports.processEventLogs = async (logs) => {
     if (log.metadata?.userId) {
       dateEntry.uniqueUsers.add(log.metadata.userId);
     }
+    const appDetails = await AppDataSource.getRepository(applicationData).findOne({
+      where : {
+        id : log.appId
+      }
+    })
+    let dataObj = AppDataSource.getRepository(Event).create({
+      event: log.event,
+      referrer: log.referrer,
+      device: log.device,
+      ipAddress: log.ipAddress,
+      metadata: log.metadata,
+      timestamp: new Date(log.timeStamp),
+      appId: appDetails,
+    });
+    dataToSaveInDB.push(dataObj)
   }
-
+  
+  
+  const resFromInsertion =  await eventRepository.save(dataToSaveInDB)
+  
   // Generate rows for event summary table
   const eventSummaryRows = [];
 
@@ -62,22 +85,27 @@ module.exports.processEventLogs = async (logs) => {
           total_count: entry.totalCount,
           unique_users_count: entry.uniqueUsers.size, // Only the count
           created_at: new Date().toISOString(), // Current timestamp
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         };
 
         eventSummaryRows.push(row);
       }
     }
   }
-
+ 
+ 
   return eventSummaryRows;
+  }
+  catch(e){
+    console.error(e)
+  }
 };
 module.exports.processEventLogsForUser = async (logs) => {
   const userStatsMap = new Map();
 
   for (let i = 0; i < logs.length; i += 1) {
     let log = JSON.parse(logs[i]);
-    
+
     // Ensure we have required fields
     if (!log.metadata?.userId) {
       console.warn(`Skipping log due to missing userId:`, log);
@@ -92,8 +120,8 @@ module.exports.processEventLogsForUser = async (logs) => {
         userId: userId,
         totalEvents: 0,
         deviceDetails: {},
-        ipAddress: log.ipAddress || 'Unknown',
-        lastEventTimestamp: new Date(log.timeStamp)
+        ipAddress: log.ipAddress || "Unknown",
+        lastEventTimestamp: new Date(log.timeStamp),
       });
     }
 
@@ -105,7 +133,7 @@ module.exports.processEventLogsForUser = async (logs) => {
     // Update device details
     const deviceType = log.device;
     if (deviceType) {
-      userEntry.deviceDetails[deviceType] = 
+      userEntry.deviceDetails[deviceType] =
         (userEntry.deviceDetails[deviceType] || 0) + 1;
     }
 
@@ -125,7 +153,7 @@ module.exports.processEventLogsForUser = async (logs) => {
       totalEvents: stats.totalEvents,
       deviceDetails: stats.deviceDetails,
       ipAddress: stats.ipAddress,
-      lastEventTimestamp: stats.lastEventTimestamp
+      lastEventTimestamp: stats.lastEventTimestamp,
     });
   }
 
