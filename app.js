@@ -1,10 +1,7 @@
 const { connectToDB, AppDataSource } = require("./config/db");
-const { connectToRedis } = require("./config/redis");
 const express = require("express");
 const session = require("express-session");
 const passport = require("passport");
-const router = express.Router();
-const crypto = require("crypto");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const authRoutes = require("./routes/auth.route");
 const analyticsRoutes = require("./routes/analytics.route");
@@ -78,7 +75,7 @@ passport.deserializeUser(async (id, done) => {
 const startApp = async () => {
   try {
     await connectToDB();
-    await require('./config/redis');
+    await require("./config/redis");
     // Redirect user to Google for authentication
     app.use("/auth", authRoutes);
     app.use("/analytics", analyticsRoutes);
@@ -88,8 +85,8 @@ const startApp = async () => {
     app.listen(1055, () => {
       console.log("listening");
     });
-    require('./jobs/logQueue')
-    require('./jobs/logWorker')
+    require("./jobs/logQueue");
+    require("./jobs/logWorker");
   } catch (error) {
     console.error("Error initializing connections:", error);
   }

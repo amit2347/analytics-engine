@@ -1,11 +1,22 @@
 const express = require("express");
 const passport = require("passport");
 const {
+  verifyTempToken,
+} = require("../middlewares/verifyTempToken.middleware.js");
+const {
   getProfileDetails,
   registerApplication,
-  regenerateApiKey,
-  revokeApiKey
+  getApiKey,
+  revokeApiKey,
 } = require("../controllors/auth.controller.js");
+const {
+  validateRequest,
+} = require("../middlewares/schemaValidation.middlewares");
+const {
+  registerAppSchema,
+  getApiKeySchema,
+  revokeApiKeySchema,
+} = require("../validators/auth.validation.js");
 const router = express.Router();
 
 router.get(
@@ -26,9 +37,24 @@ router.get(
 );
 router.get("/profile", getProfileDetails);
 //endpoint for register app for analytics
-router.post("/register", registerApplication);
-router.get('/api-key' , regenerateApiKey )
-router.post('/revoke' , revokeApiKey )
+router.post(
+  "/register",
+  validateRequest(registerAppSchema),
+  verifyTempToken,
+  registerApplication
+);
+router.get(
+  "/api-key",
+  validateRequest(getApiKeySchema),
+  verifyTempToken,
+  getApiKey
+);
+router.post(
+  "/revoke",
+  validateRequest(revokeApiKeySchema),
+  verifyTempToken,
+  revokeApiKey
+);
 // Logout
 router.get("/logout", (req, res) => {
   req.logout();

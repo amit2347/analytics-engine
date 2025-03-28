@@ -48,7 +48,7 @@ module.exports.processEventLogs = async (logs) => {
     dateEntry.totalCount += 1;
 
     // Track unique users
-    if (log.metadata?.userId) {
+    if (log.userId) {
       dateEntry.uniqueUsers.add(log.metadata.userId);
     }
     const appDetails = await AppDataSource.getRepository(applicationData).findOne({
@@ -107,7 +107,7 @@ module.exports.processEventLogsForUser = async (logs) => {
     let log = JSON.parse(logs[i]);
 
     // Ensure we have required fields
-    if (!log.metadata?.userId) {
+    if (!log.userId) {
       console.warn(`Skipping log due to missing userId:`, log);
       continue;
     }

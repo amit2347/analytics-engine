@@ -11,6 +11,7 @@ const applicationDataRepository = AppDataSource.getRepository(ApplicationData);
 const userRepository = AppDataSource.getRepository(User);
 module.exports.collectLogs = async (req, res) => {
   try {
+    const {appId , userId} = req.userContext;
     const payload = req.body;
     const objToPushToRedis = {
       event: payload.event,
@@ -18,24 +19,11 @@ module.exports.collectLogs = async (req, res) => {
       device: payload.device,
       ipAddress: payload.ipAddress,
       metadata: payload.metadata,
-      appId: payload.appId,
+      appId,
       timeStamp: Date.now(),
+      userId : userId
     };
     await redisClient.lpush("logs", JSON.stringify(objToPushToRedis));
-    // const appData = await applicationDataRepository.findOne({
-    //   where: {
-    //     id: payload.appId,
-    //   },
-    // });
-    // const objectToSave = eventRepository.create({
-    //   event: payload.event,
-    //   referrer: payload.referrer ? payload.referrer : null,
-    //   device: payload.device,
-    //   ipAddress: payload.ipAddress,
-    //   metadata: payload.metadata,
-    //   appId: appData,
-    // });
-    // await eventRepository.save(objectToSave);
     return res.status(200).send({
       message: "Logged",
     });

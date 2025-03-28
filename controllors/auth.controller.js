@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { generateApiKey, hashApiKey } = require("../helper/auth.helper.js");
 const User = require("../entities/User");
-const applicationDataRepository = require("../entities/ApplicationData.js");
+const applicationDataRepository = require("../entities/applicationData.js");
 const { AppDataSource } = require("../config/db");
 module.exports.getProfileDetails = async (req, res) => {
   const jsonSecret = process.env.JSON_SECRET_KEY;
@@ -9,18 +9,11 @@ module.exports.getProfileDetails = async (req, res) => {
   if (!userDetails) {
     return res.redirect("/");
   }
-  if (userDetails.appId) {
-    return res.send({
-      message: "You already have an app registered with you.",
-      appId: userDetails.appId,
-    });
-  }
   const secretToken = jwt.sign({ id: userDetails.id }, jsonSecret, {
     expiresIn: "1h",
   });
   return res.send({
-    message:
-      "You dont have an appId registered with you please register the same.",
+    message: "User authenticated successfully.",
     secretToken,
   });
 };
@@ -61,9 +54,7 @@ module.exports.registerApplication = async (req, res) => {
       ownerUser: userDetails,
       hashedApiKey: hashedApiKey,
     });
-    const result = await AppDataSource.getRepository(
-      applicationDataRepository
-    ).save(appData);
+    await AppDataSource.getRepository(applicationDataRepository).save(appData);
     return res.status(200).send({
       message: "App Registered Successfully . Please keep token safe.",
       apiKey: apiKey,
@@ -74,8 +65,9 @@ module.exports.registerApplication = async (req, res) => {
   }
 };
 
-module.exports.regenerateApiKey = async (req, res) => {
+module.exports.getApiKey = async (req, res) => {
   const { appName } = req.query;
+  const userId = req.userContext.userId;
 
   try {
     // Fetch the app record
@@ -90,17 +82,14 @@ module.exports.regenerateApiKey = async (req, res) => {
     }
 
     // Generate a new API key
-    const newApiKey = generateApiKey();
-    const hashedApiKey = await hashApiKey(newApiKey);
-
-    // Update the database with the new hashed API key
-    appData.hashedApiKey = hashedApiKey;
-    await AppDataSource.getRepository(applicationDataRepository).save(appData);
-
+    const userAuthToken = jwt.sign(
+      { userId, appId: appData.id },
+      process.env.JSON_SECRET_KEY
+    );
     // Return the new API key to the client
     return res.status(200).send({
-      message: "API key regenerated successfully. Please store it securely.",
-      apiKey: newApiKey,
+      message: "API key generated successfully. Please store it securely.",
+      apiKey: userAuthToken,
     });
   } catch (e) {
     console.error(e);
