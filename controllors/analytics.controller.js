@@ -1,18 +1,15 @@
 const { AppDataSource } = require("../config/db");
 const redisClient = require("../config/redis");
-const ApplicationData = require("../entities/applicationData");
-const Event = require("../entities/Event");
+
 const EventSummary = require("../entities/EventSummary");
-const User = require("../entities/User");
-const { Between } = require("typeorm");
+
 const UserAnalytics = require("../entities/UserAnalytics");
-const eventRepository = AppDataSource.getRepository(Event);
-const applicationDataRepository = AppDataSource.getRepository(ApplicationData);
-const userRepository = AppDataSource.getRepository(User);
+
 module.exports.collectLogs = async (req, res) => {
   try {
-    const {appId , userId} = req.userContext;
+    const { appId, userId } = req.userContext;
     const payload = req.body;
+    console.log("userId", userId);
     const objToPushToRedis = {
       event: payload.event,
       referrer: payload.referrer ? payload.referrer : null,
@@ -21,7 +18,7 @@ module.exports.collectLogs = async (req, res) => {
       metadata: payload.metadata,
       appId,
       timeStamp: Date.now(),
-      userId : userId
+      userId: userId,
     };
     await redisClient.lpush("logs", JSON.stringify(objToPushToRedis));
     return res.status(200).send({

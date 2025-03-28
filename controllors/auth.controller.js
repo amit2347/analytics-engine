@@ -1,8 +1,12 @@
 const jwt = require("jsonwebtoken");
-const { generateApiKey, hashApiKey } = require("../helper/auth.helper.js");
 const User = require("../entities/User");
 const applicationDataRepository = require("../entities/applicationData.js");
 const { AppDataSource } = require("../config/db");
+const {
+  generateApiKey,
+  revokeApiKey,
+} = require("../helper/keyManagement.helper.js");
+const apiKeys = require("../entities/apiKeys.js");
 module.exports.getProfileDetails = async (req, res) => {
   const jsonSecret = process.env.JSON_SECRET_KEY;
   const userDetails = req.user;
@@ -20,30 +24,17 @@ module.exports.getProfileDetails = async (req, res) => {
 module.exports.registerApplication = async (req, res) => {
   const payload = req.body;
   try {
-    const decodedData = jwt.verify(payload.token, process.env.JSON_SECRET_KEY);
-    const userId = decodedData.id;
+    const userId = req.userContext.id;
     const userDetails = await AppDataSource.getRepository(User).findOne({
       where: {
         id: userId,
       },
     });
-    console.log(userDetails);
-    const userCheck = await AppDataSource.getRepository(
-      applicationDataRepository
-    ).findOne({
-      where: {
-        ownerUser: {
-          id: userDetails.id,
-        },
-      },
-    });
-    if (userCheck) {
+    if (!userDetails) {
       return res.status(404).send({
-        message: "User is already associated with an App.",
+        message: "No Details found",
       });
     }
-    const apiKey = generateApiKey();
-    const hashedApiKey = await hashApiKey(apiKey);
     const appName = payload.appName;
     const appUrl = payload.appUrl;
     const appData = AppDataSource.getRepository(
@@ -52,12 +43,10 @@ module.exports.registerApplication = async (req, res) => {
       appName: appName,
       appUrl: appUrl,
       ownerUser: userDetails,
-      hashedApiKey: hashedApiKey,
     });
     await AppDataSource.getRepository(applicationDataRepository).save(appData);
     return res.status(200).send({
-      message: "App Registered Successfully . Please keep token safe.",
-      apiKey: apiKey,
+      message: "App Registered Successfully.",
     });
   } catch (e) {
     console.error(e);
@@ -82,14 +71,10 @@ module.exports.getApiKey = async (req, res) => {
     }
 
     // Generate a new API key
-    const userAuthToken = jwt.sign(
-      { userId, appId: appData.id },
-      process.env.JSON_SECRET_KEY
-    );
-    // Return the new API key to the client
+    const token = await generateApiKey(userId, appData.id);
     return res.status(200).send({
-      message: "API key generated successfully. Please store it securely.",
-      apiKey: userAuthToken,
+      message: "Token Generated Successfully",
+      token,
     });
   } catch (e) {
     console.error(e);
@@ -97,33 +82,27 @@ module.exports.getApiKey = async (req, res) => {
   }
 };
 module.exports.revokeApiKey = async (req, res) => {
-  const { appId } = req.body;
+  const { token } = req.body;
 
   try {
-    // Validate input
-    if (!appId) {
-      return res.status(400).send({ message: "App ID is required." });
+    const decodedToken = await jwt.verify(
+      token,
+      process.env.API_KEY_SECRET_KEY
+    );
+    const revokeStatus = await revokeApiKey(decodedToken.jti);
+    if (revokeStatus) {
+      await AppDataSource.getRepository(apiKeys).delete({
+        userId: decodedToken.userId,
+        appId: decodedToken.appId,
+      });
+      return res.status(200).send({
+        message: "API key successfully revoked. It can no longer be used.",
+      });
     }
-
-    // Fetch the app record
-    const appData = await AppDataSource.getRepository(
-      applicationDataRepository
-    ).findOne({
-      where: { id: appId },
+    return res.status(400).send({
+      message: "Token is invalid or expired.",
     });
-
-    if (!appData) {
-      return res.status(404).send({ message: "App not found." });
-    }
-
-    // Revoke the API key by nullifying or marking it as invalid
-    appData.revokeStatus = true; // Alternative: Use a status flag (e.g., revoked = true)
-    await AppDataSource.getRepository(applicationDataRepository).save(appData);
-
     // Respond with success
-    return res.status(200).send({
-      message: "API key successfully revoked. It can no longer be used.",
-    });
   } catch (error) {
     console.error(error);
     return res

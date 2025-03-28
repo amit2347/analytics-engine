@@ -5,12 +5,12 @@ module.exports = new EntitySchema({
   tableName: "event_summary",
   columns: {
     id: {
-        primary: true,
-        type: "uuid",
-        generated: "uuid",
+      primary: true,
+      type: "uuid",
+      generated: "uuid",
     },
     appId: {
-      type: "int",
+      type: "uuid",
       nullable: false,
     },
     eventName: {

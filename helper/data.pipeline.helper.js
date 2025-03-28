@@ -1,103 +1,102 @@
 const { AppDataSource } = require("../config/db");
 const applicationData = require("../entities/applicationData");
 const Event = require("../entities/Event");
-const eventRepository =  AppDataSource.getRepository(Event)
+const eventRepository = AppDataSource.getRepository(Event);
 module.exports.processEventLogs = async (logs) => {
-  try{
+  try {
     const masterMap = new Map();
-  let dataToSaveInDB = [];
-  // First, process logs and aggregate data
-  for (let i = 0; i < logs.length; i += 1) {
-    let log = JSON.parse(logs[i]);
-    const epochTime = log.timeStamp;
-    const date = new Date(epochTime);
-    
-    // Ensure we have all required fields
-    if (!log.event || !log.appId) {
-      console.warn(`Skipping log due to missing event or appId:`, log);
-      continue;
-    }
+    let dataToSaveInDB = [];
+    // First, process logs and aggregate data
+    for (let i = 0; i < logs.length; i += 1) {
+      let log = JSON.parse(logs[i]);
+      const epochTime = log.timeStamp;
+      const date = new Date(epochTime);
 
-    const dateSplit = date.toISOString().split("T");
-    const dateKey = dateSplit[0]; // YYYY-MM-DD format
-
-    // Ensure the event exists in the masterMap
-    if (!masterMap.has(log.event)) {
-      masterMap.set(log.event, {});
-    }
-
-    const eventMap = masterMap.get(log.event);
-
-    // Ensure the appId exists for this event
-    if (!eventMap[log.appId]) {
-      eventMap[log.appId] = {};
-    }
-
-    const appIdMap = eventMap[log.appId];
-
-    // Initialize date entry if it doesn't exist
-    if (!appIdMap[dateKey]) {
-      appIdMap[dateKey] = {
-        totalCount: 0,
-        uniqueUsers: new Set(),
-      };
-    }
-
-    // Update counters
-    const dateEntry = appIdMap[dateKey];
-    dateEntry.totalCount += 1;
-
-    // Track unique users
-    if (log.userId) {
-      dateEntry.uniqueUsers.add(log.metadata.userId);
-    }
-    const appDetails = await AppDataSource.getRepository(applicationData).findOne({
-      where : {
-        id : log.appId
+      // Ensure we have all required fields
+      if (!log.event || !log.appId) {
+        console.warn(`Skipping log due to missing event or appId:`, log);
+        continue;
       }
-    })
-    let dataObj = AppDataSource.getRepository(Event).create({
-      event: log.event,
-      referrer: log.referrer,
-      device: log.device,
-      ipAddress: log.ipAddress,
-      metadata: log.metadata,
-      timestamp: new Date(log.timeStamp),
-      appId: appDetails,
-    });
-    dataToSaveInDB.push(dataObj)
-  }
-  
-  
-  const resFromInsertion =  await eventRepository.save(dataToSaveInDB)
-  
-  // Generate rows for event summary table
-  const eventSummaryRows = [];
 
-  for (const [event, appIdMap] of masterMap.entries()) {
-    for (const [appId, dateMap] of Object.entries(appIdMap)) {
-      for (const [date, entry] of Object.entries(dateMap)) {
-        // Create row for event summary table
-        const row = {
-          event_name: event,
-          app_id: appId,
-          event_date: date,
-          total_count: entry.totalCount,
-          unique_users_count: entry.uniqueUsers.size, // Only the count
-          created_at: new Date().toISOString(), // Current timestamp
-          updated_at: new Date().toISOString(),
+      const dateSplit = date.toISOString().split("T");
+      const dateKey = dateSplit[0]; // YYYY-MM-DD format
+
+      // Ensure the event exists in the masterMap
+      if (!masterMap.has(log.event)) {
+        masterMap.set(log.event, {});
+      }
+
+      const eventMap = masterMap.get(log.event);
+
+      // Ensure the appId exists for this event
+      if (!eventMap[log.appId]) {
+        eventMap[log.appId] = {};
+      }
+
+      const appIdMap = eventMap[log.appId];
+
+      // Initialize date entry if it doesn't exist
+      if (!appIdMap[dateKey]) {
+        appIdMap[dateKey] = {
+          totalCount: 0,
+          uniqueUsers: new Set(),
         };
+      }
 
-        eventSummaryRows.push(row);
+      // Update counters
+      const dateEntry = appIdMap[dateKey];
+      dateEntry.totalCount += 1;
+
+      // Track unique users
+      if (log.userId) {
+        dateEntry.uniqueUsers.add(log.metadata.userId);
+      }
+      const appDetails = await AppDataSource.getRepository(
+        applicationData
+      ).findOne({
+        where: {
+          id: log.appId,
+        },
+      });
+      let dataObj = AppDataSource.getRepository(Event).create({
+        event: log.event,
+        referrer: log.referrer,
+        device: log.device,
+        ipAddress: log.ipAddress,
+        metadata: log.metadata,
+        timestamp: new Date(log.timeStamp),
+        appId: appDetails,
+      });
+      dataToSaveInDB.push(dataObj);
+    }
+
+    await eventRepository.save(dataToSaveInDB);
+
+    // Generate rows for event summary table
+    const eventSummaryRows = [];
+
+    for (const [event, appIdMap] of masterMap.entries()) {
+      for (const [appId, dateMap] of Object.entries(appIdMap)) {
+        for (const [date, entry] of Object.entries(dateMap)) {
+          // Create row for event summary table
+          const row = {
+            event_name: event,
+            app_id: appId,
+            event_date: date,
+            total_count: entry.totalCount,
+            unique_users_count: entry.uniqueUsers.size, // Only the count
+            created_at: new Date().toISOString(), // Current timestamp
+            updated_at: new Date().toISOString(),
+          };
+
+          eventSummaryRows.push(row);
+        }
       }
     }
-  }
- 
- 
-  return eventSummaryRows;
-  }
-  catch(e){
-    console.error(e)
+
+    return eventSummaryRows;
+  } catch (e) {
+    console.error(e);
   }
 };
 module.exports.processEventLogsForUser = async (logs) => {
@@ -112,7 +111,7 @@ module.exports.processEventLogsForUser = async (logs) => {
       continue;
     }
 
-    const userId = log.metadata.userId;
+    const userId = log.userId;
 
     // Initialize user entry if it doesn't exist
     if (!userStatsMap.has(userId)) {
