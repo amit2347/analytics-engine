@@ -9,6 +9,12 @@ Please follow the below steps to clone this repo and get it running :
 3. run ```npm i```
 4. Create a .env file and insert the attributes shared to you over mail.
 5. run ```node index.js```
+6. Open ```localhost:1055/``` on your browser. Login via google. You shall recieve a token on the screen.
+7. Open ```localhost:1055/api-docs``` in another window and paste the token in auth Token.
+8. If opening first time, register your app.
+9. Then get the respective token for it using the ```/api-key``` endpoint.
+10. Paste this token in the analytics token . 
+11. Feel free to use the analytics endpoint now.
 
 ## Description 
 Tech Stack Used : NodeJs , ExpressJs , MySQL , Redis, BullMQ.
@@ -29,7 +35,8 @@ I have tried to keep the tables is relational as possible.
 
 ## Misc Features:
 
-* Added middleware to protect our routes. There are two types of token. The first one is generated post successfull login via Google. The second one is generated post successull API Call for ```/auth/api-key``` endpoint.
+* Added middleware to protect our routes. There are two types of token. The first one is generated post successfull login via Google.It only contains the userId inside it.
+* The second one is generated post successull API Call for ```/auth/api-key``` endpoint. It contains both userId and appId .
 * This was done purely with authentication and edge cases in mind. This also helped me with the revoking logic.
 * Both tokens are essentially JWTs.
 * While I have used Redis wherever possible, I have a strong belief of using Redis as a caching layer and not as a promary source of data.Therefore, all the data is priamrily stored in SQL.
