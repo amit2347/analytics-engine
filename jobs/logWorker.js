@@ -1,5 +1,5 @@
 const { Worker } = require("bullmq");
-const { createClient } = require("redis");
+const redisClient = require("../config/redis");
 const { Promise } = require("bluebird");
 const {
   processEventLogs,
@@ -8,19 +8,6 @@ const {
 const { AppDataSource } = require("../config/db");
 const EventSummary = require("../entities/EventSummary");
 const UserAnalytics = require("../entities/UserAnalytics");
-// ✅ Create Redis client for direct Redis operations
-const redisClient = createClient({
-  socket: {
-    host: "localhost",
-    port: 6379,
-  },
-});
-
-// ✅ Ensure Redis client connects before usage
-(async () => {
-  await redisClient.connect();
-  console.log("🚀 Connected to Redis!");
-})();
 
 // ✅ Create a BullMQ Worker with its own Redis connection
 const worker = new Worker(
@@ -128,12 +115,3 @@ const worker = new Worker(
     concurrency: 1, // Process one job at a time
   }
 );
-
-// ✅ Event Listeners for Debugging
-// worker.on("completed", (job) => {
-//   console.log(`🎉 Job ${job.id} completed successfully!`);
-// });
-
-// worker.on("failed", (job, err) => {
-//   console.error(`❌ Job ${job.id} failed:`, err);
-// });

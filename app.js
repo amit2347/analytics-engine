@@ -6,6 +6,8 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const authRoutes = require("./routes/auth.route");
 const analyticsRoutes = require("./routes/analytics.route");
 const User = require("./entities/User");
+const swaggerUi = require("swagger-ui-express");
+const specs = require("./swaggerConfig");
 
 const app = express();
 app.use(express.json());
@@ -20,7 +22,8 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(passport.session());
-
+// Middleware to serve Swagger UI
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 passport.use(
   new GoogleStrategy(
     {

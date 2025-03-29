@@ -16,6 +16,28 @@ const collectLogsSchema = {
     }).required(),
   }),
 };
+const eventSummarySchema = {
+  query: Joi.object({
+    event: Joi.string().min(1).max(255).required(),
+
+    startDate: Joi.date().iso().optional().messages({
+      "date.format": "startDate must be in YYYY-MM-DD format",
+    }),
+
+    endDate: Joi.date().iso().optional().messages({
+      "date.format": "endDate must be in YYYY-MM-DD format",
+    }),
+
+    app_id: Joi.string().optional(),
+  }),
+};
+const userStatusSchema = {
+  query: Joi.object({
+    userId: Joi.string().required(),
+  }),
+};
 module.exports = {
   collectLogsSchema,
+  eventSummarySchema,
+  userStatusSchema,
 };
