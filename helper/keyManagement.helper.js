@@ -4,18 +4,39 @@ const apiKeyRepo = AppDataSource.getRepository("ApiKey");
 const jwt = require("jsonwebtoken");
 
 const { v4: uuidv4 } = require("uuid");
+const User = require("../entities/User");
+const applicationData = require("../entities/applicationData");
 
 /**
  * Generate API Key (JWT Token)
  */
 async function generateApiKey(userId, appId) {
   // Revoke old key if exists
-  const existingKey = await apiKeyRepo.findOne({ where: { userId, appId } });
+  const existingKey = await apiKeyRepo.findOne({
+    where: {
+      user: { id: userId },
+      application: { id: appId },
+    },
+  });
   if (existingKey) {
     await revokeApiKey(existingKey.jti);
-    await apiKeyRepo.delete({ userId, appId });
+    await apiKeyRepo.delete({
+      user: { id: userId },
+      application: { id: appId },
+    });
   }
-
+  const userDetails = await AppDataSource.getRepository(User).findOne({
+    where: {
+      id: userId,
+    },
+  });
+  const appDetails = await AppDataSource.getRepository(applicationData).findOne(
+    {
+      where: {
+        id: appId,
+      },
+    }
+  );
   // Generate new key
   const jti = uuidv4(); // Unique identifier for token
   const token = jwt.sign(
@@ -25,9 +46,12 @@ async function generateApiKey(userId, appId) {
   );
 
   // Store in DB
-  const apiKeyEntity = apiKeyRepo.create({ userId, appId, jti });
+  const apiKeyEntity = apiKeyRepo.create({
+    user: userDetails,
+    application: appDetails,
+    jti,
+  });
   await apiKeyRepo.save(apiKeyEntity);
-
   return token;
 }
 /**

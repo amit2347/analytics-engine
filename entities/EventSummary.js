@@ -9,10 +9,6 @@ module.exports = new EntitySchema({
       type: "uuid",
       generated: "uuid",
     },
-    appId: {
-      type: "uuid",
-      nullable: false,
-    },
     eventName: {
       type: "varchar",
       length: 255,
@@ -44,16 +40,24 @@ module.exports = new EntitySchema({
       onUpdate: "CURRENT_TIMESTAMP",
     },
   },
+  relations: {
+    application: {
+      type: "many-to-one",
+      target: "ApplicationData",
+      joinColumn: { name: "appId" },
+      onDelete: "CASCADE",
+    },
+  },
   indices: [
     {
       name: "idx_event_summary_app_event_date",
-      columns: ["appId", "eventName", "date"],
+      columns: ["application", "eventName", "date"],
     },
   ],
   uniques: [
     {
       name: "unique_app_event_date",
-      columns: ["appId", "eventName", "date"],
+      columns: ["application", "eventName", "date"],
     },
   ],
 });

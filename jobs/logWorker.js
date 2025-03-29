@@ -61,7 +61,7 @@ const worker = new Worker(
             const eventRepo = AppDataSource.getRepository(EventSummary);
             const existence = await eventRepo.findOne({
               where: {
-                appId: item.app_id,
+                application: { id: item.app_id },
                 eventName: item.event_name,
                 date: item.event_date,
               },
@@ -76,7 +76,13 @@ const worker = new Worker(
                 }
               );
             } else {
-              const objectToSave = eventRepo.create(item);
+              const objectToSave = eventRepo.create({
+                eventName: item.event_name,
+                date: item.event_date,
+                totalCount: item.total_count,
+                uniqueUsers: item.unique_users_count,
+                deviceData: {},
+              });
               await eventRepo.save(objectToSave);
             }
           } catch (e) {

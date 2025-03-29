@@ -9,12 +9,6 @@ module.exports = new EntitySchema({
       type: "uuid",
       generated: "uuid",
     },
-    userId: {
-      type: "uuid",
-    },
-    appId: {
-      type: "uuid",
-    },
     jti: {
       type: "varchar",
       length: 255,
@@ -23,6 +17,20 @@ module.exports = new EntitySchema({
     createdAt: {
       type: "timestamp",
       createDate: true,
+    },
+  },
+  relations: {
+    user: {
+      type: "many-to-one", // Many API keys belong to one user
+      target: "User", // The User entity
+      joinColumn: { name: "userId" }, // Maps userId as FK
+      onDelete: "CASCADE", // Optional: Delete API keys if the user is deleted
+    },
+    application: {
+      type: "many-to-one", // Many API keys belong to one application
+      target: "ApplicationData", // The Application entity
+      joinColumn: { name: "appId" }, // Maps appId as FK
+      onDelete: "CASCADE", // Optional: Delete API keys if the app is deleted
     },
   },
 });
