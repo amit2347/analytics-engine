@@ -26,7 +26,7 @@ const router = express.Router();
  *     description: Stores event logs for analytics processing.
  *     tags: [Analytics]
  *     security:
- *       - bearerAuth: []
+ *       - AnalyticsToken: []
  *     requestBody:
  *       required: true
  *       content:
@@ -89,7 +89,7 @@ router.post(
  *     description: Retrieves a summary of collected event logs.
  *     tags: [Analytics]
  *     security:
- *       - bearerAuth: []
+ *       - AnalyticsToken: []
  *     parameters:
  *       - in: query
  *         name: event
@@ -146,7 +146,7 @@ router.get(
  *     description: Retrieves user-based analytics data.
  *     tags: [Analytics]
  *     security:
- *       - bearerAuth: []
+ *       - AnalyticsToken: []
  *     parameters:
  *       - in: query
  *         name: userId

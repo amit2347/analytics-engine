@@ -9,7 +9,6 @@ module.exports.collectLogs = async (req, res) => {
   try {
     const { appId, userId } = req.userContext;
     const payload = req.body;
-    console.log("userId", userId);
     const objToPushToRedis = {
       event: payload.event,
       referrer: payload.referrer ? payload.referrer : null,

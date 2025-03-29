@@ -82,13 +82,10 @@ module.exports.getApiKey = async (req, res) => {
   }
 };
 module.exports.revokeApiKey = async (req, res) => {
-  const { token } = req.body;
+  const token = req.body.apiKey;
 
   try {
-    const decodedToken = await jwt.verify(
-      token,
-      process.env.API_KEY_SECRET_KEY
-    );
+    const decodedToken = jwt.verify(token, process.env.API_KEY_SECRET_KEY);
     const revokeStatus = await revokeApiKey(decodedToken.jti);
     if (revokeStatus) {
       await AppDataSource.getRepository(apiKeys).delete({
@@ -99,7 +96,7 @@ module.exports.revokeApiKey = async (req, res) => {
         message: "API key successfully revoked. It can no longer be used.",
       });
     }
-    return res.status(400).send({
+    return res.status(401).send({
       message: "Token is invalid or expired.",
     });
     // Respond with success

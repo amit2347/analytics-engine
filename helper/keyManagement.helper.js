@@ -18,7 +18,6 @@ async function generateApiKey(userId, appId) {
 
   // Generate new key
   const jti = uuidv4(); // Unique identifier for token
-  console.log("userId", userId);
   const token = jwt.sign(
     { userId, appId, jti },
     process.env.API_KEY_SECRET_KEY,
@@ -36,7 +35,7 @@ async function generateApiKey(userId, appId) {
  */
 async function revokeApiKey(jti) {
   console.log(jti);
-  await redisClient.set(`revoked:${jti}`, "1", "EX", 86400 * 7);
+  return await redisClient.set(`revoked:${jti}`, "1", "EX", 86400 * 7);
 }
 
 /**
@@ -46,7 +45,7 @@ async function validateApiKey(token) {
   try {
     const decoded = jwt.verify(token, process.env.API_KEY_SECRET_KEY);
     const isRevoked = await redisClient.get(`revoked:${decoded.jti}`);
-    if (isRevoked) return null; // Token is revoked
+    if (isRevoked) return false; // Token is revoked
     return { userId: decoded.userId, appId: decoded.appId };
   } catch (error) {
     console.error(error);

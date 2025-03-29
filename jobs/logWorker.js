@@ -13,98 +13,82 @@ const UserAnalytics = require("../entities/UserAnalytics");
 const worker = new Worker(
   "process-logs",
   async (job) => {
-    console.log("hit");
-    const { batchSize } = job.data;
+    try {
+      const { batchSize } = job.data;
+      const logs = await redisClient.lrange("logs", 0, batchSize - 1);
 
-    const logs = await redisClient.lRange("logs", 0, batchSize - 1);
-    // {
-    //     event: 'Login_Button_Clicked',
-    //     referrer: 'google.com',
-    //     device: 'Andoird',
-    //     ipAddress: '255.555.2321.213',
-    //     metadata: {
-    //       browser: 'Chrome',
-    //       os: 'Android',
-    //       screenSize: '1080x1920',
-    //       userId: 'a2f712a1-3251-4d03-8ebb-055a6b8c1d6b'
-    //     },
-    //     appId: 1
-    //     timeStamp : 1743093696314
-    //   }
-    if (logs.length > 0) {
-      await redisClient.lTrim("logs", batchSize, -1);
-      console.log(` Processed ${logs.length} logs.`);
-    } else {
-      console.log("⚠️ No logs to process.");
-    }
-    const resFromPipeline = await processEventLogs(logs);
-    const resFromUserPipeline = await processEventLogsForUser(logs);
-    await Promise.map(resFromUserPipeline, async (item) => {
-      try {
-        const existence = await AppDataSource.getRepository(
-          UserAnalytics
-        ).findOne({
-          where: {
-            userId: item.userId,
-          },
-        });
-        if (existence) {
-          await AppDataSource.getRepository(UserAnalytics).update(
-            { id: existence.id },
-            {
-              totalEvents: existence.totalEvents + item.totalEvents,
-              lastEventTimestamp: item.lastEventTimestamp,
-            }
-          );
-        } else {
-          const objectToSave = AppDataSource.getRepository(
-            UserAnalytics
-          ).create({
-            userId: item.userId,
-            totalEvents: item.totalEvents,
-            deviceDetails: item.deviceDetails,
-            ipAddress: item.ipAddress,
-            lastEventTimestamp: item.lastEventTimestamp,
-          });
-          const res = await AppDataSource.getRepository(UserAnalytics).save(
-            objectToSave
-          );
-          console.log("res ->", res);
-        }
-      } catch (e) {
-        console.error(e);
+      if (logs.length > 0) {
+        await redisClient.ltrim("logs", batchSize, -1);
+        console.log(`✅ Processed ${logs.length} logs.`);
+      } else {
+        console.log("⚠️ No logs to process.");
         return;
       }
-    });
-    await Promise.map(resFromPipeline, async (item) => {
-      const existence = await AppDataSource.getRepository(EventSummary).findOne(
-        {
-          where: {
-            appId: item.app_id,
-            eventName: item.event_name,
-            date: item.event_date,
-          },
-        }
-      );
-      if (existence) {
-        await AppDataSource.getRepository(EventSummary).update(
-          { id: existence.id },
-          {
-            totalCount: existence.totalCount + item.total_count,
-            uniqueUsers: existence.uniqueUsers + item.unique_users_count,
+
+      // Processing logs
+      try {
+        const resFromPipeline = await processEventLogs(logs);
+        console.log("✅ Processed event logs:", resFromPipeline);
+
+        const resFromUserPipeline = await processEventLogsForUser(logs);
+
+        await Promise.map(resFromUserPipeline, async (item) => {
+          try {
+            const userRepo = AppDataSource.getRepository(UserAnalytics);
+            const existence = await userRepo.findOne({
+              where: { userId: item.userId },
+            });
+
+            if (existence) {
+              await userRepo.update(
+                { id: existence.id },
+                {
+                  totalEvents: existence.totalEvents + item.totalEvents,
+                  lastEventTimestamp: item.lastEventTimestamp,
+                }
+              );
+            } else {
+              const objectToSave = userRepo.create(item);
+              await userRepo.save(objectToSave);
+            }
+          } catch (e) {
+            console.error("❌ Error processing user analytics:", e);
           }
-        );
-      } else {
-        const objectToSave = AppDataSource.getRepository(EventSummary).create({
-          appId: item.app_id,
-          eventName: item.event_name,
-          date: item.event_date,
-          totalCount: item.total_count,
-          uniqueUsers: item.unique_users_count,
         });
-        await AppDataSource.getRepository(EventSummary).save(objectToSave);
+
+        await Promise.map(resFromPipeline, async (item) => {
+          try {
+            const eventRepo = AppDataSource.getRepository(EventSummary);
+            const existence = await eventRepo.findOne({
+              where: {
+                appId: item.app_id,
+                eventName: item.event_name,
+                date: item.event_date,
+              },
+            });
+
+            if (existence) {
+              await eventRepo.update(
+                { id: existence.id },
+                {
+                  totalCount: existence.totalCount + item.total_count,
+                  uniqueUsers: existence.uniqueUsers + item.unique_users_count,
+                }
+              );
+            } else {
+              const objectToSave = eventRepo.create(item);
+              await eventRepo.save(objectToSave);
+            }
+          } catch (e) {
+            console.error("❌ Error processing event summary:", e);
+          }
+        });
+      } catch (e) {
+        console.error("❌ Error in pipeline processing:", e);
       }
-    });
+    } catch (e) {
+      console.error("❌ Job processing error:", e);
+    }
   },
   {
     connection: {
@@ -115,3 +99,12 @@ const worker = new Worker(
     concurrency: 1, // Process one job at a time
   }
 );
+
+// Catch worker-level errors
+worker.on("failed", (job, err) => {
+  console.error(`❌ Job ${job.id} failed with error:`, err);
+});
+
+worker.on("error", (err) => {
+  console.error("❌ Worker encountered an error:", err);
+});

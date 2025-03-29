@@ -1,22 +1,39 @@
-const swaggerJsdoc = require("swagger-jsdoc");
+const swaggerJSDoc = require("swagger-jsdoc");
 
 const options = {
   definition: {
     openapi: "3.0.0",
-    info: { title: "My API", version: "1.0.0" },
-    servers: [{ url: "http://localhost:1055" }],
+    info: {
+      title: "API Documentation",
+      version: "1.0.0",
+      description: "API Documentation for Authentication and Analytics",
+    },
+    servers: [
+      {
+        url: "http://localhost:1055",
+      },
+    ],
     components: {
       securitySchemes: {
-        bearerAuth: {
+        AuthToken: {
           type: "http",
           scheme: "bearer",
           bearerFormat: "JWT",
+          description: "Use this token for /auth endpoints",
+        },
+        AnalyticsToken: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description: "Use this token for /analytics endpoints",
         },
       },
     },
   },
-  apis: ["./routes/*.js"],
+  apis: ["./routes/*.js"], // Make sure this path is correct
 };
 
-const specs = swaggerJsdoc(options);
-module.exports = specs;
+// Generate Swagger docs
+const swaggerSpec = swaggerJSDoc(options);
+
+module.exports = swaggerSpec;

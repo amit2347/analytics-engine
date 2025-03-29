@@ -2,7 +2,6 @@ const jwt = require("jsonwebtoken");
 
 module.exports.verifyTempToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  console.log("Authorization Header:", authHeader);
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).send({
       message: "Token Missing or invalid",

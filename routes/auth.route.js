@@ -90,7 +90,7 @@ router.get("/profile", getProfileDetails);
  *     description: Allows users to register an application to use analytics services.
  *     tags: [Authentication]
  *     security:
- *       - bearerAuth: []
+ *       - AuthToken: []
  *     requestBody:
  *       required: true
  *       content:
@@ -101,14 +101,17 @@ router.get("/profile", getProfileDetails);
  *               appName:
  *                 type: string
  *                 example: "My App"
- *               description:
+ *               appUrl:
  *                 type: string
- *                 example: "This is my app for tracking analytics."
+ *                 format: uri
+ *                 example: "https://myapp.com"
  *     responses:
- *       201:
+ *       200:
  *         description: Application registered successfully
- *       400:
+ *       422:
  *         description: Invalid request data
+ *       400:
+ *         description: Bad Request
  */
 router.post(
   "/register",
@@ -125,12 +128,25 @@ router.post(
  *     description: Retrieves an API key for an authenticated application.
  *     tags: [Authentication]
  *     security:
- *       - bearerAuth: []
+ *       - AuthToken: []
+ *     parameters:
+ *       - in: query
+ *         name: appName
+ *         required: true
+ *         schema:
+ *           type: string
+ *           minLength: 1
+ *           maxLength: 255
+ *         description: Name of the registered application.
  *     responses:
  *       200:
- *         description: API key retrieved successfully
+ *         description: API key retrieved successfully.
+ *       400:
+ *         description: Bad request, missing or invalid parameters.
  *       401:
- *         description: Unauthorized, missing or invalid token
+ *         description: Unauthorized, missing or invalid token.
+ *       422:
+ *         description: Payload in invalid format.
  */
 router.get(
   "/api-key",
@@ -147,7 +163,7 @@ router.get(
  *     description: Revokes an existing API key.
  *     tags: [Authentication]
  *     security:
- *       - bearerAuth: []
+ *       - AuthToken: []
  *     requestBody:
  *       required: true
  *       content:
@@ -172,23 +188,5 @@ router.post(
   verifyTempToken,
   revokeApiKey
 );
-
-/**
- * @swagger
- * /auth/logout:
- *   get:
- *     summary: Logs out the user
- *     description: Ends the user's session and logs them out.
- *     tags: [Authentication]
- *     responses:
- *       200:
- *         description: Logout successful
- *       401:
- *         description: User was not logged in
- */
-router.get("/logout", (req, res) => {
-  req.logout();
-  res.redirect("/");
-});
 
 module.exports = router;
