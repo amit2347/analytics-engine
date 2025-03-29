@@ -13,20 +13,22 @@ Please follow the below steps to clone this repo and get it running :
 ## Description 
 Tech Stack Used : NodeJs , ExpressJs , MySQL , Redis, BullMQ.
 
-Simple ER Digram to illustrate my table structure : 
-
 ## ER Diagram
 
 ![ER Digram](./Diagrams/ER-diagram.svg)
 
 I have tried to keep the tables is relational as possible.
 
+## Call Flow Diagram 
+
 ![Call Flow Diagram](./Diagrams/Call-Flow.svg)
 
 * As the call flow suggests, the collect API call directly pushes the logs to a redis list. It is then read from the redis list, processed and pushed into three tables -> events , event_summary , user_analytics . These three tables are sufficient for our analytics end points.
 * The timeout scenario explained: my bullmq job is only fired for redis length more than a certain threshold lets say 500. But what if the redis list is only filled to 499 and goes quiet . This will lead to starvation until one more log is pushed . To tackle this scenario I have added a timeout of 60 seconds. If the list is lower than threshold and 60 seconds have passed, then I will trigger a job for any number of items present in the redis list,
 * The only con of this is the analytics might be delayed by 30 seconds at max(the timeout scenario).
-Some features : 
+
+## Misc Features:
+
 * Added middleware to protect our routes. There are two types of token. The first one is generated post successfull login via Google. The second one is generated post successull API Call for ```/auth/api-key``` endpoint.
 * This was done purely with authentication and edge cases in mind. This also helped me with the revoking logic.
 * Both tokens are essentially JWTs.
