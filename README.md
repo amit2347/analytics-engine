@@ -12,7 +12,7 @@ Please follow the below steps to clone this repo and get it running :
 
 ## Description 
 Tech Stack Used : NodeJs , ExpressJs , MySQL , Redis, BullMQ.
-
+    
 ## ER Diagram
 
 ![ER Digram](./Diagrams/ER-diagram.svg)
