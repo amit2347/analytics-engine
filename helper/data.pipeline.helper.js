@@ -1,5 +1,5 @@
 const { AppDataSource } = require("../config/db");
-const applicationData = require("../entities/applicationData");
+const ApplicationData = require("../entities/ApplicationData");
 const { processEventLogsForUser } = require("../helper/data.pipeline.helper");
 
 const Event = require("../entities/Event");
@@ -53,7 +53,7 @@ module.exports.processEventLogs = async (logs) => {
         dateEntry.uniqueUsers.add(log.metadata.userId);
       }
       const appDetails = await AppDataSource.getRepository(
-        applicationData
+        ApplicationData
       ).findOne({
         where: {
           id: log.appId,

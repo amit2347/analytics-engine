@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../entities/User");
-const applicationDataRepository = require("../entities/applicationData.js");
+const ApplicationDataRepository = require("../entities/ApplicationData.js");
 const { AppDataSource } = require("../config/db");
 const {
   generateApiKey,
@@ -38,13 +38,13 @@ module.exports.registerApplication = async (req, res) => {
     const appName = payload.appName;
     const appUrl = payload.appUrl;
     const appData = AppDataSource.getRepository(
-      applicationDataRepository
+      ApplicationDataRepository
     ).create({
       appName: appName,
       appUrl: appUrl,
       ownerUser: userDetails,
     });
-    await AppDataSource.getRepository(applicationDataRepository).save(appData);
+    await AppDataSource.getRepository(ApplicationDataRepository).save(appData);
     return res.status(200).send({
       message: "App Registered Successfully.",
     });
@@ -61,7 +61,7 @@ module.exports.getApiKey = async (req, res) => {
   try {
     // Fetch the app record
     const appData = await AppDataSource.getRepository(
-      applicationDataRepository
+      ApplicationDataRepository
     ).findOne({
       where: { appName },
     });

@@ -3,7 +3,7 @@ const Event = require("../entities/Event");
 const EventSummary = require("../entities/EventSummary");
 const User = require("../entities/User");
 const UserAnalytics = require("../entities/UserAnalytics");
-const ApplicationData = require("../entities/applicationData");
+const ApplicationData = require("../entities/ApplicationData");
 const apiKeys = require("../entities/apiKeys");
 require("dotenv").config();
 

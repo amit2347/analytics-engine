@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 
 const { v4: uuidv4 } = require("uuid");
 const User = require("../entities/User");
-const applicationData = require("../entities/applicationData");
+const ApplicationData = require("../entities/ApplicationData");
 
 /**
  * Generate API Key (JWT Token)
@@ -30,7 +30,7 @@ async function generateApiKey(userId, appId) {
       id: userId,
     },
   });
-  const appDetails = await AppDataSource.getRepository(applicationData).findOne(
+  const appDetails = await AppDataSource.getRepository(ApplicationData).findOne(
     {
       where: {
         id: appId,

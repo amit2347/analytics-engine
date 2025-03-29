@@ -8,7 +8,7 @@ const {
 const { AppDataSource } = require("../config/db");
 const EventSummary = require("../entities/EventSummary");
 const UserAnalytics = require("../entities/UserAnalytics");
-const applicationData = require("../entities/applicationData");
+const ApplicationData = require("../entities/ApplicationData");
 const User = require("../entities/User");
 
 // ✅ Create a BullMQ Worker with its own Redis connection
@@ -93,7 +93,7 @@ const worker = new Worker(
               );
             } else {
               const applicationDetails = await AppDataSource.getRepository(
-                applicationData
+                ApplicationData
               ).findOne({
                 where: {
                   id: item.app_id,
@@ -122,7 +122,7 @@ const worker = new Worker(
   },
   {
     connection: {
-      host: "localhost",
+      host: process.env.REDIS_HOST,
       port: 6379,
     },
     autorun: true, // Ensure worker starts automatically
