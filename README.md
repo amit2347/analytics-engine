@@ -16,7 +16,7 @@ Tech Stack Used : NodeJs , ExpressJs , MySQL , Redis, BullMQ.
 
 Simple ER Digram to illustrate my table structure : 
 
-![ER Digram](./ER-Diagram/ER-Diagram.svg)
+![ER Digram](./Diagrams/ER-Diagram.svg)
 Some features : 
 * Added middleware to protect our routes. There are two types of token. The first one is generated post successfull login via Google. The second one is generated post successull API Call for ```/auth/api-key``` endpoint.
 * This was done purely with authentication and edge cases in mind. This also helped me with the revoking logic.
