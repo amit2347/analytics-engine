@@ -5,7 +5,7 @@ const User = require("../entities/User");
 const UserAnalytics = require("../entities/UserAnalytics");
 const ApplicationData = require("../entities/ApplicationData");
 const apiKeys = require("../entities/apiKeys");
-
+require("dotenv").config();
 const AppDataSource = new DataSource({
   type: "mysql",
   host: process.env.DB_HOST,

@@ -4,15 +4,15 @@ Thank you for this opportunity.
 Please refer to the Swagger API Docs on /api-docs endpoint for the API Endpoints. Its payload and responses.
 
 Please follow the below steps to clone this repo and get it running :
-1. Instal Docker Desktop from [here](https://www.docker.com/products/docker-desktop/)
-2. To check if Docker is installed, run: ```docker --version```
-3. Clone my repo.
-4. Run the command ```docker-compose up -d --build```
-5. My application shall be up and running on port ```localhost:1055```
+1. Install nodejs.
+2. Clone the repo.
+3. run ```npm i```
+4. Create a .env file and insert the attributes shared to you over mail.
+5. run ```node index.js```
 
 ## Description 
 Tech Stack Used : NodeJs , ExpressJs , MySQL , Redis, BullMQ.
-    
+
 ## ER Diagram
 
 ![ER Digram](./Diagrams/ER-diagram.svg)

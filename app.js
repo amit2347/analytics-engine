@@ -8,7 +8,6 @@ const analyticsRoutes = require("./routes/analytics.route");
 const User = require("./entities/User");
 const swaggerUi = require("swagger-ui-express");
 const specs = require("./swaggerConfig");
-
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

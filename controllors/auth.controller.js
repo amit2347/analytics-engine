@@ -7,6 +7,7 @@ const {
   revokeApiKey,
 } = require("../helper/keyManagement.helper.js");
 const apiKeys = require("../entities/apiKeys.js");
+const ApplicationData = require("../entities/ApplicationData.js");
 module.exports.getProfileDetails = async (req, res) => {
   const jsonSecret = process.env.JSON_SECRET_KEY;
   const userDetails = req.user;
@@ -86,11 +87,24 @@ module.exports.revokeApiKey = async (req, res) => {
 
   try {
     const decodedToken = jwt.verify(token, process.env.API_KEY_SECRET_KEY);
+    const isAppOwner = await AppDataSource.getRepository(
+      ApplicationData
+    ).findOne({
+      where: {
+        ownerUser: { id: req.userContext.userId },
+        id: decodedToken.appId,
+      },
+    });
+    if (!isAppOwner) {
+      return res.status(401).send({
+        message: "You are not authorised to revoke tokens.",
+      });
+    }
     const revokeStatus = await revokeApiKey(decodedToken.jti);
     if (revokeStatus) {
-      await AppDataSource.getRepository(apiKeys).delete({
-        userId: decodedToken.userId,
-        appId: decodedToken.appId,
+      await AppDataSource.getRepository("ApiKey").delete({
+        user: { id: decodedToken.userId },
+        application: { id: decodedToken.appId },
       });
       return res.status(200).send({
         message: "API key successfully revoked. It can no longer be used.",
