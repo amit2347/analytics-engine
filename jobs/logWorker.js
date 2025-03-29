@@ -123,7 +123,7 @@ const worker = new Worker(
   {
     connection: {
       host: process.env.REDIS_HOST,
-      port: 6379,
+      port: process.env.REDIS_PORT,
     },
     autorun: true, // Ensure worker starts automatically
     concurrency: 1, // Process one job at a time

@@ -10,13 +10,22 @@ Please follow the below steps to clone this repo and get it running :
 4. Run the command ```docker-compose up -d --build```
 5. My application shall be up and running on port ```localhost:1055```
 
-To view the main API :
 ## Description 
 Tech Stack Used : NodeJs , ExpressJs , MySQL , Redis, BullMQ.
 
 Simple ER Digram to illustrate my table structure : 
 
-![ER Digram](./Diagrams/ER-Diagram.svg)
+## ER Diagram
+
+![ER Digram](./Diagrams/ER-diagram.svg)
+
+I have tried to keep the tables is relational as possible.
+
+![Call Flow Diagram](./Diagrams/Call-Flow.svg)
+
+* As the call flow suggests, the collect API call directly pushes the logs to a redis list. It is then read from the redis list, processed and pushed into three tables -> events , event_summary , user_analytics . These three tables are sufficient for our analytics end points.
+* The timeout scenario explained: my bullmq job is only fired for redis length more than a certain threshold lets say 500. But what if the redis list is only filled to 499 and goes quiet . This will lead to starvation until one more log is pushed . To tackle this scenario I have added a timeout of 60 seconds. If the list is lower than threshold and 60 seconds have passed, then I will trigger a job for any number of items present in the redis list,
+* The only con of this is the analytics might be delayed by 30 seconds at max(the timeout scenario).
 Some features : 
 * Added middleware to protect our routes. There are two types of token. The first one is generated post successfull login via Google. The second one is generated post successull API Call for ```/auth/api-key``` endpoint.
 * This was done purely with authentication and edge cases in mind. This also helped me with the revoking logic.
@@ -35,3 +44,10 @@ Some features :
     * Validating the analytics token.
     * Validating the payload sent by user.
 * I have developed the pub/sub model in conjunction with redis list. This has made the ```collect``` endpoint as lightweight and ultra low response time as possible.The call flow shall describe it further.
+
+
+## Future Improvements::
+
+* Given more time, I will definitely write more test scripts . I am more interested in learning integration testing than unit test cases as I strongly believe mimicking the real flow as close as possible will minimise bugs.
+* Paritioning tables as per lets say date/month is a possibility given the amount of data and rate at which it comes.
+* Caching is a dual edged sword. On one hand , in an ideal world , everyone would like to cache everything. But given the limited resources, we should aim to cache only the endpoints/ datapoints which are in need of cache. Right now , my approach is good enough to use the DB itself , but in the future we can add a cache layer for that as well.
