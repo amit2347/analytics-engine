@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-module.exports.verifyTempToken = async (req, res , next) => {
+module.exports.verifyTempToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   console.log("Authorization Header:", authHeader);
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -11,7 +11,7 @@ module.exports.verifyTempToken = async (req, res , next) => {
   const authToken = authHeader.split(" ")[1]; // Extract token part
   try {
     const decodedData = jwt.verify(authToken, process.env.JSON_SECRET_KEY);
-    req['userContext'] = { userId: decodedData.id };
+    req["userContext"] = { userId: decodedData.id };
     return next();
   } catch (e) {
     console.error(e);

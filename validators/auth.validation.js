@@ -7,17 +7,17 @@ const registerAppSchema = {
   }),
 };
 const getApiKeySchema = {
-    query: Joi.object({
-        appName : Joi.string().min(1).max(255).required()
-    })
-}
+  query: Joi.object({
+    appName: Joi.string().min(1).max(255).required(),
+  }),
+};
 const revokeApiKeySchema = {
-    body : Joi.object({
-        apiKey : Joi.string().min(1).required()
-    })
-}
+  body: Joi.object({
+    apiKey: Joi.string().min(1).required(),
+  }),
+};
 module.exports = {
-    registerAppSchema,
-    getApiKeySchema,
-    revokeApiKeySchema
+  registerAppSchema,
+  getApiKeySchema,
+  revokeApiKeySchema,
 };

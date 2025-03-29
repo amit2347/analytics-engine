@@ -34,12 +34,12 @@ module.exports = new EntitySchema({
   },
   relations: {
     appId: {
-        target: "ApplicationData", // Reference to the "User" entity
-        type: "many-to-one", // Many Applications can belong to one User
-        joinColumn: {
-            name: "appid" // Matches the column name
-        },
-        onDelete: "CASCADE" // Cascades delete when the referenced user is deleted
-    }
-}
+      target: "ApplicationData", // Reference to the "User" entity
+      type: "many-to-one", // Many Applications can belong to one User
+      joinColumn: {
+        name: "appid", // Matches the column name
+      },
+      onDelete: "CASCADE", // Cascades delete when the referenced user is deleted
+    },
+  },
 });
