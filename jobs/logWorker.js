@@ -8,6 +8,8 @@ const {
 const { AppDataSource } = require("../config/db");
 const EventSummary = require("../entities/EventSummary");
 const UserAnalytics = require("../entities/UserAnalytics");
+const applicationData = require("../entities/applicationData");
+const User = require("../entities/User");
 
 // ✅ Create a BullMQ Worker with its own Redis connection
 const worker = new Worker(
@@ -34,13 +36,14 @@ const worker = new Worker(
 
         await Promise.map(resFromUserPipeline, async (item) => {
           try {
-            const userRepo = AppDataSource.getRepository(UserAnalytics);
-            const existence = await userRepo.findOne({
-              where: { userId: item.userId },
+            const UserAnalyticsRepo =
+              AppDataSource.getRepository(UserAnalytics);
+            const existence = await UserAnalyticsRepo.findOne({
+              where: { user: { id: item.userId } }, // ✅ Correct way to filter by userId
+              relations: ["user"], // 👈 Ensure TypeORM loads the relation
             });
-
             if (existence) {
-              await userRepo.update(
+              await UserAnalyticsRepo.update(
                 { id: existence.id },
                 {
                   totalEvents: existence.totalEvents + item.totalEvents,
@@ -48,8 +51,21 @@ const worker = new Worker(
                 }
               );
             } else {
-              const objectToSave = userRepo.create(item);
-              await userRepo.save(objectToSave);
+              const userDetails = await AppDataSource.getRepository(
+                User
+              ).findOne({
+                where: {
+                  id: item.userId,
+                },
+              });
+              const objectToSave = UserAnalyticsRepo.create({
+                totalEvents: item.totalEvents,
+                deviceDetails: item.deviceDetails,
+                ipAddress: item.ipAddress,
+                lastEventTimestamp: item.lastEventTimestamp,
+                user: userDetails,
+              });
+              await UserAnalyticsRepo.save(objectToSave);
             }
           } catch (e) {
             console.error("❌ Error processing user analytics:", e);
@@ -76,12 +92,20 @@ const worker = new Worker(
                 }
               );
             } else {
+              const applicationDetails = await AppDataSource.getRepository(
+                applicationData
+              ).findOne({
+                where: {
+                  id: item.app_id,
+                },
+              });
               const objectToSave = eventRepo.create({
                 eventName: item.event_name,
                 date: item.event_date,
                 totalCount: item.total_count,
                 uniqueUsers: item.unique_users_count,
                 deviceData: {},
+                application: applicationDetails,
               });
               await eventRepo.save(objectToSave);
             }
