@@ -34,7 +34,6 @@ async function generateApiKey(userId, appId) {
  * Revoke API Key
  */
 async function revokeApiKey(jti) {
-  console.log(jti);
   return await redisClient.set(`revoked:${jti}`, "1", "EX", 86400 * 7);
 }
 
@@ -48,7 +47,6 @@ async function validateApiKey(token) {
     if (isRevoked) return false; // Token is revoked
     return { userId: decoded.userId, appId: decoded.appId };
   } catch (error) {
-    console.error(error);
     return null; // Invalid token
   }
 }

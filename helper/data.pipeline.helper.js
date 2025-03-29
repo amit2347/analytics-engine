@@ -1,5 +1,7 @@
 const { AppDataSource } = require("../config/db");
 const applicationData = require("../entities/applicationData");
+const { processEventLogsForUser } = require("../helper/data.pipeline.helper");
+
 const Event = require("../entities/Event");
 const eventRepository = AppDataSource.getRepository(Event);
 module.exports.processEventLogs = async (logs) => {
@@ -14,7 +16,6 @@ module.exports.processEventLogs = async (logs) => {
 
       // Ensure we have all required fields
       if (!log.event || !log.appId) {
-        console.warn(`Skipping log due to missing event or appId:`, log);
         continue;
       }
 
@@ -107,7 +108,6 @@ module.exports.processEventLogsForUser = async (logs) => {
 
     // Ensure we have required fields
     if (!log.userId) {
-      console.warn(`Skipping log due to missing userId:`, log);
       continue;
     }
 
