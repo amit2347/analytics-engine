@@ -33,6 +33,10 @@ I have tried to keep the tables is relational as possible.
 * The timeout scenario explained: my bullmq job is only fired for redis length more than a certain threshold lets say 500. But what if the redis list is only filled to 499 and goes quiet . This will lead to starvation until one more log is pushed . To tackle this scenario I have added a timeout of 60 seconds. If the list is lower than threshold and 60 seconds have passed, then I will trigger a job for any number of items present in the redis list,
 * The only con of this is the analytics might be delayed by 30 seconds at max(the timeout scenario).
 
+## Scalability:
+
+* My approach is fault tolerant as the analytics and aggregation part has been moved as a Job. For faster processing , perhaps horizontal scaling of dockerized pods can help. 
+
 ## Misc Features:
 
 * Added middleware to protect our routes. There are two types of token. The first one is generated post successfull login via Google.It only contains the userId inside it.
@@ -60,3 +64,4 @@ I have tried to keep the tables is relational as possible.
 * Given more time, I will definitely write more test scripts . I am more interested in learning integration testing than unit test cases as I strongly believe mimicking the real flow as close as possible will minimise bugs.
 * Paritioning tables as per lets say date/month is a possibility given the amount of data and rate at which it comes.
 * Caching is a dual edged sword. On one hand , in an ideal world , everyone would like to cache everything. But given the limited resources, we should aim to cache only the endpoints/ datapoints which are in need of cache. Right now , my approach is good enough to use the DB itself , but in the future we can add a cache layer for that as well.
+* Further additional functionalities as fault tolerance, retry logic and circuit breakers can also help  us tremendously.
