@@ -46,7 +46,8 @@ const worker = new Worker(
               await UserAnalyticsRepo.update(
                 { id: existence.id },
                 {
-                  totalEvents: existence.totalEvents + item.totalEvents,
+                  totalEvents:
+                    Number(existence.totalEvents) + Number(item.totalEvents),
                   lastEventTimestamp: item.lastEventTimestamp,
                 }
               );
@@ -87,8 +88,11 @@ const worker = new Worker(
               await eventRepo.update(
                 { id: existence.id },
                 {
-                  totalCount: existence.totalCount + item.total_count,
-                  uniqueUsers: existence.uniqueUsers + item.unique_users_count,
+                  totalCount:
+                    Number(existence.totalCount) + Number(item.total_count),
+                  uniqueUsers:
+                    Number(existence.uniqueUsers) +
+                    Number(item.unique_users_count),
                 }
               );
             } else {
