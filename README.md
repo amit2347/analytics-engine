@@ -21,7 +21,7 @@ Tech Stack Used : NodeJs , ExpressJs , MySQL , Redis, BullMQ.
 
 ## ER Diagram
 
-![ER Digram](./Diagrams/ER-diagram.svg)
+![ER Digram](./Diagrams/ER-diagram-Fixed.svg)
 
 I have tried to keep the tables is relational as possible.
 
