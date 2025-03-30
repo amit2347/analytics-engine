@@ -8,7 +8,17 @@ const analyticsRoutes = require("./routes/analytics.route");
 const User = require("./entities/User");
 const swaggerUi = require("swagger-ui-express");
 const specs = require("./swaggerConfig");
+const rateLimit = require("express-rate-limit");
 const app = express();
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  // config for older headers
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many requests from this IP, please try again later.",
+});
+app.use(limiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

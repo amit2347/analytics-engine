@@ -57,7 +57,7 @@ I have tried to keep the tables is relational as possible.
     * Validating the analytics token.
     * Validating the payload sent by user.
 * I have developed the pub/sub model in conjunction with redis list. This has made the ```collect``` endpoint as lightweight and ultra low response time as possible.The call flow shall describe it further.
-
+* Added basic rate limiting.
 
 ## Future Improvements::
 
@@ -65,3 +65,4 @@ I have tried to keep the tables is relational as possible.
 * Paritioning tables as per lets say date/month is a possibility given the amount of data and rate at which it comes.
 * Caching is a dual edged sword. On one hand , in an ideal world , everyone would like to cache everything. But given the limited resources, we should aim to cache only the endpoints/ datapoints which are in need of cache. Right now , my approach is good enough to use the DB itself , but in the future we can add a cache layer for that as well.
 * Further additional functionalities as fault tolerance, retry logic and circuit breakers can also help  us tremendously.
+* We can add fine tuned rate limiting as per specific endpoints.
