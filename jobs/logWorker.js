@@ -1,5 +1,5 @@
+require("dotenv").config();
 const { Worker } = require("bullmq");
-const redisClient = require("../config/redis");
 const { Promise } = require("bluebird");
 const {
   processEventLogs,
@@ -10,7 +10,18 @@ const EventSummary = require("../entities/EventSummary");
 const UserAnalytics = require("../entities/UserAnalytics");
 const ApplicationData = require("../entities/ApplicationData");
 const User = require("../entities/User");
+const IORedis = require("ioredis");
 
+const redisClient = new IORedis({
+  host: process.env.REDIS_HOST || "redis",
+  port: parseInt(process.env.REDIS_PORT) || 6379,
+  enableReadyCheck: false, // Prevents unnecessary checks
+  maxRetriesPerRequest: null, // Avoids retry failures
+  lazyConnect: true, // Prevents premature connections
+});
+redisClient.on("error", (err) => {
+  console.error("Redis connection error:", err);
+});
 // ✅ Create a BullMQ Worker with its own Redis connection
 const worker = new Worker(
   "process-logs",
@@ -125,10 +136,7 @@ const worker = new Worker(
     }
   },
   {
-    connection: {
-      host: process.env.REDIS_HOST,
-      port: process.env.REDIS_PORT,
-    },
+    connection: redisClient,
     autorun: true, // Ensure worker starts automatically
     concurrency: 1, // Process one job at a time
   }

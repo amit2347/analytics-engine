@@ -1,3 +1,4 @@
+require("dotenv").config();
 const { connectToDB, AppDataSource } = require("./config/db");
 const express = require("express");
 const session = require("express-session");

@@ -1,12 +1,17 @@
 const { Queue } = require("bullmq");
-const redisClient = require("../config/redis");
-const logQueue = new Queue("process-logs");
+const IORedis = require("ioredis");
+const redisConnection = new IORedis({
+  host: process.env.REDIS_HOST || "redis",
+  port: parseInt(process.env.REDIS_PORT) || 6379,
+});
+
+const logQueue = new Queue("process-logs", { connection: redisConnection });
 
 let lastProcessedTime = Date.now(); // Track last processing time
 
 async function checkAndEnqueue() {
   console.log("running");
-  const logCount = await redisClient.llen("logs");
+  const logCount = await redisConnection.llen("logs");
 
   // If logs are above threshold (500), process immediately
   if (logCount > 500) {
