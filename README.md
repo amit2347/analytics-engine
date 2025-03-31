@@ -4,17 +4,18 @@ Thank you for this opportunity.
 Please refer to the Swagger API Docs on /api-docs endpoint for the API Endpoints. Its payload and responses.
 
 Please follow the below steps to clone this repo and get it running :
-1. Install nodejs.
+1. Ensure you have the following installed on your system:
+    - [Docker](https://www.docker.com/get-started)
+    - [Docker Compose](https://docs.docker.com/compose/install/)
 2. Clone the repo.
-3. run ```npm i```
-4. Create a .env file and insert the attributes shared to you over mail.
-5. run ```node index.js```
-6. Open ```localhost:1055/``` on your browser. Login via google. You shall recieve a token on the screen.
-7. Open ```localhost:1055/api-docs``` in another window and paste the token in auth Token.
-8. If opening first time, register your app.
-9. Then get the respective token for it using the ```/api-key``` endpoint.
-10. Paste this token in the analytics token . 
-11. Feel free to use the analytics endpoint now.
+3. Create a .env file and insert the attributes shared to you over mail.
+4. Run command ```docker-compose up --build -d```. Verify if its running correctly : ```docker ps```
+5. Open ```localhost:1055/``` on your browser. Login via google. You shall recieve a token on the screen.
+6. Open ```localhost:1055/api-docs``` in another window and paste the token in auth Token.
+7. If opening first time, register your app.
+8. Then get the respective token for it using the ```/api-key``` endpoint.
+9. Paste this token in the analytics token . 
+10. Feel free to use the analytics endpoint now.
 
 ## Description 
 Tech Stack Used : NodeJs , ExpressJs , MySQL , Redis, BullMQ.
